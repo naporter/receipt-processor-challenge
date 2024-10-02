@@ -1,14 +1,23 @@
-# Use an OpenJDK 17 image as the base
-FROM openjdk:17-jdk-slim
+# Use a Gradle base image
+FROM gradle:8.10.2-jdk17 AS build
 
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy the JAR file into the container
-COPY build/libs/*.jar receipt-processor-challenge.jar
+# Copy the project files into the container
+COPY . .
 
-# Expose the port your application listens on
+# Build the project using Gradle
+RUN gradle build
+
+# Use a smaller image for the final runtime
+FROM openjdk:17-jdk-slim
+
+# Copy the built JAR file from the build stage
+COPY --from=build /app/build/libs/*.jar app.jar
+
+# Expose the port your application listens on (if applicable)
 EXPOSE 8080
 
-# Specify the command to run your application
-CMD ["java", "-jar", "receipt-processor-challenge.jar"]
+# Run the application
+CMD ["java", "-jar", "app.jar"]
